@@ -8,6 +8,7 @@ using osu.Framework.Graphics;
 using OpenTK;
 using OpenTK.Graphics;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Configuration;
 
 namespace TypeProyect.Screens.Pieces
 {
@@ -19,31 +20,10 @@ namespace TypeProyect.Screens.Pieces
         private UnknownAlbumArt mainCover;
         private UnknownAlbumArt subCover;
 
-        private int trackN = 0;
-        public int TrackN
-        {
-            get
-            {
-                return trackN;
-            }
-            set
-            {
-                Texture tempCover = new TextureStore(new RawTextureLoaderStore(new StorageBackedResourceStore(storage))).Get($"{value:00}.jpg");
-                exchangeCover.Texture = cover.Texture;
-                cover.Texture = tempCover;
-
-                cover.MoveToX(1).Then().MoveToX(0, 500, Easing.OutQuart);
-                mainCover.MoveToX(1).Then().MoveToX(0, 500, Easing.OutQuart);
-                mainCover.Alpha = cover.Texture == null ? 1 : 0;
-                subCover.Alpha = exchangeCover.Texture == null ? 1 : 0;
-
-                trackN = value;
-            }
-        }
+        public Bindable<int> TrackIndex = new Bindable<int>(0);
 
         public CoverContainer()
         {
-            Size = new Vector2(375);
             Masking = true;
 
             Children = new Drawable[]
@@ -83,6 +63,20 @@ namespace TypeProyect.Screens.Pieces
                     }
                 }
             };
+
+            TrackIndex.ValueChanged += TrackChanged;
+        }
+
+        private void TrackChanged(int n)
+        {
+            Texture tempCover = new TextureStore(new RawTextureLoaderStore(new StorageBackedResourceStore(storage))).Get($"{n:00}.jpg");
+            exchangeCover.Texture = cover.Texture;
+            cover.Texture = tempCover;
+
+            cover.MoveToX(1).Then().MoveToX(0, 500, Easing.OutQuart);
+            mainCover.MoveToX(1).Then().MoveToX(0, 500, Easing.OutQuart);
+            mainCover.Alpha = cover.Texture == null ? 1 : 0;
+            subCover.Alpha = exchangeCover.Texture == null ? 1 : 0;
         }
 
         [BackgroundDependencyLoader]
