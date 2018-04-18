@@ -11,7 +11,6 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input;
-using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
 using System;
@@ -30,16 +29,16 @@ namespace TypeProyect.Screens
         private GameHost host;
         private Bindable<Track> trackBind = new Bindable<Track>();
         private Texture cover;
-        private Container coverContainer;
+        private CoverContainer coverContainer;
+        private Container timeContainer;
         private Triangles triangles;
-        private Triangle timeTriangle;
 
-        private int trackN = 1;
+        private Bindable<int> trackN = new Bindable<int>();
 
         private readonly List<Shader> loadTargets = new List<Shader>();
 
         [BackgroundDependencyLoader]
-        private void load(Storage storage, GameHost host, ShaderManager manager, FrameworkConfigManager config, TextureStore textures)
+        private void load(Storage storage, GameHost host, ShaderManager manager, FrameworkConfigManager config)
         {
             this.host = host;
             this.storage = storage;
@@ -51,9 +50,6 @@ namespace TypeProyect.Screens
             config.GetBindable<WindowMode>(FrameworkSetting.WindowMode).Value = WindowMode.Fullscreen;
             config.GetBindable<FrameSync>(FrameworkSetting.FrameSync).Value = FrameSync.VSync;
 
-            loadTrack();
-
-            cover = new TextureStore(new RawTextureLoaderStore(new StorageBackedResourceStore(storage))).Get("01.jpg");
 
             AddRange(new Drawable[]
             {
@@ -67,22 +63,13 @@ namespace TypeProyect.Screens
                     TriangleScale = 5,
                     Velocity = 2.5f,
                 },
-                coverContainer = new Container
+                coverContainer = new CoverContainer
                 {
                     Anchor = Anchor.TopCentre,
                     Origin = Anchor.CentreLeft,
-                    Size = new Vector2(375),
-                    Masking = true,
                     RelativePositionAxes = Axes.Both,
                     Position = new Vector2(-0.4f, 0.31f),
-                    Child = new Sprite
-                    {
-                        Anchor = Anchor.Centre,
-                        Origin = Anchor.Centre,
-                        RelativeSizeAxes = Axes.Both,
-                        FillMode = FillMode.Fill,
-                        Texture = cover,
-                    }
+                    Size = new Vector2(375),
                 },
                 new Container
                 {
@@ -108,14 +95,14 @@ namespace TypeProyect.Screens
                         }
                     }
                 },
-                new Container
+                timeContainer = new Container
                 {
                     Anchor = Anchor.TopCentre,
                     Origin = Anchor.CentreLeft,
                     RelativePositionAxes = Axes.Both,
                     RelativeSizeAxes = Axes.X,
                     Position = new Vector2(-0.4f, 0.55f),
-                    Size = new Vector2(0.8f, 40),
+                    Size = new Vector2(0f, 40),
                     Children = new Drawable[]
                     {
                         currentTime = new SpriteText
@@ -127,11 +114,11 @@ namespace TypeProyect.Screens
                             TextSize = 35,
                             Position = new Vector2(0, -15),
                         },
-                        timeTriangle = new EquilateralTriangle
+                        new EquilateralTriangle
                         {
                             RelativePositionAxes = Axes.X,
                             Size = new Vector2(13),
-                            Position = new Vector2(0f, -3.5f),
+                            Position = new Vector2(1f, -3.5f),
                             Origin = Anchor.TopCentre,
                             Anchor = Anchor.TopLeft,
                             Rotation = 180,
@@ -167,6 +154,15 @@ namespace TypeProyect.Screens
                     }
                 },
             });
+
+            coverContainer.TrackIndex.BindTo(trackN);
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            loadTrack();
         }
 
         private bool screenie = false;
@@ -193,7 +189,7 @@ namespace TypeProyect.Screens
                     if (!track.IsRunning)
                         track.Start();
 
-                    progressContainer.Width = (float)(track.CurrentTime / track.Length);
+                    timeContainer.Width = (progressContainer.Width = (float)(track.CurrentTime / track.Length)) * 0.8f;
                     currentTime.Text = $"{(int)(track.CurrentTime / 60000)}:{((int)(track.CurrentTime / 1000) % 60):00}";
                     triangles.Velocity = 2.32222f + (float)Math.Pow(track.CurrentAmplitudes.Average * 2 + .5, 2.5);
                     float progress = progressContainer.Size.X;
@@ -207,12 +203,12 @@ namespace TypeProyect.Screens
                         : 0);
                 }
             }
-            timeTriangle.MoveToX(progressContainer.Width);
         }
 
         private void loadTrack()
         {
-            string filename = $"{trackN.ToString("00")}.mp3";
+            int tempIndex = trackN.Value + 1;
+            string filename = $"{tempIndex:00}.mp3";
             Track tempTrack;
             if (storage.Exists(filename))
             {
@@ -220,11 +216,11 @@ namespace TypeProyect.Screens
             }
             else
             {
-                trackN = 1;
+                tempIndex = 1;
                 tempTrack = new TrackBass(storage.GetStream("01.mp3"));
             }
             Game.Audio.Track.AddItemToList(trackBind.Value = tempTrack);
-            trackN++;
+            trackN.Value = tempIndex;
         }
 
         public async void TakeScreenshotAsync()
