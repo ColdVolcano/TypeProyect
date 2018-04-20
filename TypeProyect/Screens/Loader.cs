@@ -9,7 +9,6 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics.Textures;
 using osu.Framework.Input;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
@@ -28,7 +27,6 @@ namespace TypeProyect.Screens
         private Storage storage;
         private GameHost host;
         private Bindable<Track> trackBind = new Bindable<Track>();
-        private Texture cover;
         private CoverContainer coverContainer;
         private Container timeContainer;
         private Triangles triangles;
@@ -49,7 +47,6 @@ namespace TypeProyect.Screens
             loadTargets.Add(manager.Load(VertexShaderDescriptor.TEXTURE_3, FragmentShaderDescriptor.TEXTURE));
             config.GetBindable<WindowMode>(FrameworkSetting.WindowMode).Value = WindowMode.Fullscreen;
             config.GetBindable<FrameSync>(FrameworkSetting.FrameSync).Value = FrameSync.VSync;
-
 
             AddRange(new Drawable[]
             {
@@ -177,18 +174,12 @@ namespace TypeProyect.Screens
                 TakeScreenshotAsync();
                 screenie = true;
             }*/
-            if (track.IsLoaded)
+            if (track?.IsLoaded ?? false)
             {
                 if (track.HasCompleted)
-                {
-                    progressContainer.ResizeWidthTo(0, 500, Easing.OutExpo);
                     loadTrack();
-                }
                 else
                 {
-                    if (!track.IsRunning)
-                        track.Start();
-
                     timeContainer.Width = (progressContainer.Width = (float)(track.CurrentTime / track.Length)) * 0.8f;
                     currentTime.Text = $"{(int)(track.CurrentTime / 60000)}:{((int)(track.CurrentTime / 1000) % 60):00}";
                     triangles.Velocity = 2.32222f + (float)Math.Pow(track.CurrentAmplitudes.Average * 2 + .5, 2.5);
@@ -219,8 +210,10 @@ namespace TypeProyect.Screens
                 tempIndex = 1;
                 tempTrack = new TrackBass(storage.GetStream("01.mp3"));
             }
+            progressContainer.ResizeWidthTo(0, 500, Easing.OutExpo);
             Game.Audio.Track.AddItemToList(trackBind.Value = tempTrack);
             trackN.Value = tempIndex;
+            tempTrack.Start();
         }
 
         public async void TakeScreenshotAsync()
