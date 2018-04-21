@@ -60,12 +60,12 @@ namespace TypeProyect.Screens
                     TriangleScale = 5,
                     Velocity = 2.5f,
                 },
-                coverContainer = new CoverContainer
+                coverContainer = new CoverContainer(trackBind)
                 {
                     Anchor = Anchor.TopCentre,
-                    Origin = Anchor.CentreLeft,
+                    Origin = Anchor.Centre,
                     RelativePositionAxes = Axes.Both,
-                    Position = new Vector2(-0.4f, 0.31f),
+                    Position = new Vector2(-0.30234375f, 0.31f),
                     Size = new Vector2(375),
                 },
                 new Container
@@ -88,7 +88,7 @@ namespace TypeProyect.Screens
                             Anchor = Anchor.BottomLeft,
                             Origin = Anchor.TopLeft,
                             RelativeSizeAxes = Axes.X,
-                            Height = 400
+                            Height = 460
                         }
                     }
                 },
@@ -236,7 +236,7 @@ namespace TypeProyect.Screens
         }
         protected override bool OnMouseDown(InputState state, MouseDownEventArgs args)
         {
-            trackBind.Value.Seek(trackBind.Value.Length - 10000);
+            trackBind.Value.Seek(trackBind.Value.Length - 3000);
             return base.OnMouseDown(state, args);
         }
     }

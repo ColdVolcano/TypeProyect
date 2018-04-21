@@ -86,8 +86,6 @@ namespace TypeProyect.Screens.Pieces
             public Vector2 Size;
             public float[] AudioData;
 
-            private const float bars_per_line = 85;
-
             public override void Draw(Action<TexturedVertex2D> vertexAction)
             {
                 base.Draw(vertexAction);
@@ -105,9 +103,6 @@ namespace TypeProyect.Screens.Pieces
 
                     for (int i = 0; i < 255; i++)
                     {
-                        if (AudioData[i] == 0)
-                            continue;
-
                         var barPosition = new Vector2(((i % 64) * 4 / limit) * Size.X, 0);
 
                         var barSize = new Vector2(Size.X * 3 / limit, Size.Y * AudioData[i + 1]);
