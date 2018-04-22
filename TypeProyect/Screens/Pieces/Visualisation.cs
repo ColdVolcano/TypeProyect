@@ -1,8 +1,8 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES30;
-using osu.Framework.Configuration;
 using osu.Framework.Audio.Track;
+using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Colour;
