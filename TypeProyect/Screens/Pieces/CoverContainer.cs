@@ -9,6 +9,7 @@ using OpenTK;
 using OpenTK.Graphics;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Configuration;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using osu.Framework.Audio.Track;
 
@@ -25,7 +26,6 @@ namespace TypeProyect.Screens.Pieces
 
         public Bindable<int> TrackIndex = new Bindable<int>(0);
         private Bindable<Track> track = new Bindable<Track>();
-        private int nextChangeTime;
 
         public CoverContainer(Bindable<Track> track)
         {
@@ -75,10 +75,7 @@ namespace TypeProyect.Screens.Pieces
             track.ValueChanged += restoreChanges;
         }
 
-        private void restoreChanges(Track t)
-        {
-            nextChangeTime = 30000;
-        }
+        private void restoreChanges(Track t) => Scheduler.Add(() => this.ScaleTo(1).Then().Delay(30000 - t.CurrentTime + Time.Elapsed).Then().ScaleTo(1).OnComplete(_ => UpdateCover()));
 
         private void TrackChanged(int n)
         {
@@ -96,20 +93,24 @@ namespace TypeProyect.Screens.Pieces
             mainContainer.MoveToX(1).Then().MoveToX(0, 500, Easing.OutQuart);
         }
 
-        protected override void Update()
+        private void UpdateCover()
         {
             base.Update();
 
-            if (track.Value.CurrentTime > nextChangeTime && textures.Count > 1)
+            if (textures.Count > 1 && track.Value.Length - track.Value.CurrentTime > 2000)
             {
                 if (coverIndex >= textures.Count - 1)
                     coverIndex = -1;
                 this.ScaleTo(new Vector2(0, 1), 750 / 2f, Easing.InExpo)
+                    .OnComplete(_ => cover.Texture = textures[++coverIndex]);
+                this.Delay(750 / 2f)
                     .Then()
-                    .ScaleTo(1, 750 / 2f, Easing.OutExpo);
-                Scheduler.AddDelayed(() => cover.Texture = textures[++coverIndex], 750 / 2f);
-                int proposedCoverChangeTime = ((int)track.Value.CurrentTime / 30000 + 1) * 30000;
-                nextChangeTime = proposedCoverChangeTime + 750 > track.Value.Length ? int.MaxValue : proposedCoverChangeTime;
+                    .ScaleTo(1, 750 / 2f, Easing.OutExpo)
+                    .Then()
+                    .Delay(30000 - 750)
+                    .Then()
+                    .ScaleTo(1)
+                    .OnComplete(_ => UpdateCover());
             }
         }
 

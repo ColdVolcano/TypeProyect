@@ -25,6 +25,7 @@ namespace TypeProyect.Screens
         private Container progressContainer;
         private SpriteText currentTime;
         private Storage storage;
+        private TypeProyect game;
         private GameHost host;
         private Bindable<Track> trackBind = new Bindable<Track>();
         private CoverContainer coverContainer;
@@ -36,10 +37,11 @@ namespace TypeProyect.Screens
         private readonly List<Shader> loadTargets = new List<Shader>();
 
         [BackgroundDependencyLoader]
-        private void load(Storage storage, GameHost host, ShaderManager manager, FrameworkConfigManager config)
+        private void load(Storage storage, GameHost host, ShaderManager manager, FrameworkConfigManager config, TypeProyect game)
         {
             this.host = host;
             this.storage = storage;
+            this.game = game;
             loadTargets.Add(manager.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE_ROUNDED));
             loadTargets.Add(manager.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.BLUR));
             loadTargets.Add(manager.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE));
@@ -47,36 +49,38 @@ namespace TypeProyect.Screens
             loadTargets.Add(manager.Load(VertexShaderDescriptor.TEXTURE_3, FragmentShaderDescriptor.TEXTURE));
             config.GetBindable<WindowMode>(FrameworkSetting.WindowMode).Value = WindowMode.Fullscreen;
             config.GetBindable<FrameSync>(FrameworkSetting.FrameSync).Value = FrameSync.VSync;
+        }
 
-            AddRange(new Drawable[]
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+            game.LoadComponentSingleFile(triangles = new Triangles()
             {
-                triangles = new Triangles()
-                {
-                    Colour = new Color4(30, 30, 30, 255),
-                    ColourLight = new Color4(255, 255, 255, 255),
-                    ColourDark = new Color4(42, 42, 42, 255),
-                    RelativeSizeAxes = Axes.Both,
-                    Size = new Vector2(1),
-                    TriangleScale = 5,
-                    Velocity = 2.5f,
-                },
-                coverContainer = new CoverContainer(trackBind)
-                {
-                    Anchor = Anchor.TopCentre,
-                    Origin = Anchor.Centre,
-                    RelativePositionAxes = Axes.Both,
-                    Position = new Vector2(-0.30234375f, 0.31f),
-                    Size = new Vector2(375),
-                },
-                new Container
-                {
-                    Anchor = Anchor.TopCentre,
-                    Origin = Anchor.CentreLeft,
-                    RelativePositionAxes = Axes.Both,
-                    RelativeSizeAxes = Axes.X,
-                    Position = new Vector2(-0.4f, 0.55f),
-                    Size = new Vector2(0.8f, 40),
-                    Children = new Drawable[]
+                Colour = new Color4(30, 30, 30, 255),
+                ColourLight = new Color4(255, 255, 255, 255),
+                ColourDark = new Color4(42, 42, 42, 255),
+                RelativeSizeAxes = Axes.Both,
+                Size = new Vector2(1),
+                TriangleScale = 5,
+                Velocity = 2.5f,
+            }, Add);
+            game.LoadComponentSingleFile(coverContainer = new CoverContainer(trackBind)
+            {
+                Anchor = Anchor.TopCentre,
+                Origin = Anchor.Centre,
+                RelativePositionAxes = Axes.Both,
+                Position = new Vector2(-0.30234375f, 0.31f),
+                Size = new Vector2(375),
+            }, _ => { Add(_); _.TrackIndex.BindTo(trackN); });
+            game.LoadComponentSingleFile(new Container
+            {
+                Anchor = Anchor.TopCentre,
+                Origin = Anchor.CentreLeft,
+                RelativePositionAxes = Axes.Both,
+                RelativeSizeAxes = Axes.X,
+                Position = new Vector2(-0.4f, 0.55f),
+                Size = new Vector2(0.8f, 40),
+                Children = new Drawable[]
                     {
                         new Box
                         {
@@ -91,16 +95,16 @@ namespace TypeProyect.Screens
                             Height = 460
                         }
                     }
-                },
-                timeContainer = new Container
-                {
-                    Anchor = Anchor.TopCentre,
-                    Origin = Anchor.CentreLeft,
-                    RelativePositionAxes = Axes.Both,
-                    RelativeSizeAxes = Axes.X,
-                    Position = new Vector2(-0.4f, 0.55f),
-                    Size = new Vector2(0f, 40),
-                    Children = new Drawable[]
+            }, Add);
+            game.LoadComponentSingleFile(timeContainer = new Container
+            {
+                Anchor = Anchor.TopCentre,
+                Origin = Anchor.CentreLeft,
+                RelativePositionAxes = Axes.Both,
+                RelativeSizeAxes = Axes.X,
+                Position = new Vector2(-0.4f, 0.55f),
+                Size = new Vector2(0f, 40),
+                Children = new Drawable[]
                     {
                         currentTime = new SpriteText
                         {
@@ -122,17 +126,17 @@ namespace TypeProyect.Screens
                             EdgeSmoothness = new Vector2(1),
                         }
                     }
-                },
-                new Container
-                {
-                    Anchor = Anchor.TopCentre,
-                    Origin = Anchor.CentreLeft,
-                    RelativePositionAxes = Axes.Both,
-                    RelativeSizeAxes = Axes.X,
-                    Position = new Vector2(-0.4f, 0.55f),
-                    Size = new Vector2(0.8f, 40),
-                    Masking = true,
-                    Children = new Drawable[]
+            }, Add);
+            game.LoadComponentSingleFile(new Container
+            {
+                Anchor = Anchor.TopCentre,
+                Origin = Anchor.CentreLeft,
+                RelativePositionAxes = Axes.Both,
+                RelativeSizeAxes = Axes.X,
+                Position = new Vector2(-0.4f, 0.55f),
+                Size = new Vector2(0.8f, 40),
+                Masking = true,
+                Children = new Drawable[]
                     {
                         progressContainer = new Container
                         {
@@ -149,16 +153,7 @@ namespace TypeProyect.Screens
                             }
                         }
                     }
-                },
-            });
-
-            coverContainer.TrackIndex.BindTo(trackN);
-        }
-
-        protected override void LoadComplete()
-        {
-            base.LoadComplete();
-
+            }, Add);
             loadTrack();
         }
 
@@ -211,7 +206,13 @@ namespace TypeProyect.Screens
                 tempTrack = new TrackBass(storage.GetStream("01.mp3"));
             }
             progressContainer.ResizeWidthTo(0, 500, Easing.OutExpo);
-            Game.Audio.Track.AddItemToList(trackBind.Value = tempTrack);
+            if (trackBind.Value != null)
+            {
+                trackBind.Value.Stop();
+                trackBind.Value.Dispose();
+            }
+            Game.Audio.Track.AddItemToList(tempTrack);
+            trackBind.Value = tempTrack;
             trackN.Value = tempIndex;
             tempTrack.Start();
         }
@@ -236,7 +237,7 @@ namespace TypeProyect.Screens
         }
         protected override bool OnMouseDown(InputState state, MouseDownEventArgs args)
         {
-            trackBind.Value.Seek(trackBind.Value.Length - 3000);
+            trackBind.Value?.Seek(trackBind.Value.Length - 500);
             return base.OnMouseDown(state, args);
         }
     }

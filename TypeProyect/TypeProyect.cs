@@ -2,6 +2,8 @@
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.IO.Stores;
+using System;
+using System.Threading.Tasks;
 using TypeProyect.Screens;
 
 namespace TypeProyect
@@ -49,10 +51,20 @@ namespace TypeProyect
         {
             base.LoadComplete();
 
-            Add(new Loader
+            dependencies.Cache(this);
+
+            LoadComponentSingleFile(new Loader
             {
                 RelativeSizeAxes = Axes.Both
-            });
+            }, Add);
+        }
+
+        private Task asyncLoadStream;
+
+        public void LoadComponentSingleFile<T>(T d, Action<T> add)
+            where T : Drawable
+        {
+            Schedule(() => { asyncLoadStream = asyncLoadStream?.ContinueWith(t => LoadComponentAsync(d, add).Wait()) ?? LoadComponentAsync(d, add); });
         }
     }
 }
