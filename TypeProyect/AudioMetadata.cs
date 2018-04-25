@@ -1,0 +1,59 @@
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
+using osu.Framework.Audio.Track;
+using osu.Framework.Graphics.Textures;
+using osu.Framework.IO.Stores;
+using osu.Framework.Platform;
+
+namespace TypeProyect
+{
+    public class AudioMetadata
+    {
+        public AudioMetadata()
+        {
+            Lyrics.EnglishLyrics.Add(new LyricPhrase());
+            Lyrics.RomajiLyrics.Add(new LyricPhrase());
+            Lyrics.KanjiLyrics.Add(new LyricPhrase());
+            SideLyrics.EnglishLyrics.Add(new SideLyricPhrase());
+            SideLyrics.RomajiLyrics.Add(new SideLyricPhrase());
+            SideLyrics.KanjiLyrics.Add(new SideLyricPhrase());
+        }
+        private List<string> covers = new List<string>();
+
+        private string audio = "";
+
+        [JsonProperty("title")]
+        public string Title = "";
+
+        [JsonProperty("titleUnicode")]
+        public string TitleUnicode = "";
+
+        [JsonProperty("artist")]
+        public string Artist = "";
+
+        [JsonProperty("artistUnicode")]
+        public string ArtistUnicode = "";
+
+        [JsonProperty("lyrics")]
+        public Lyrics<LyricPhrase> Lyrics = new Lyrics<LyricPhrase>();
+
+        [JsonProperty("sideLyrics")]
+        public SideLyrics SideLyrics = new SideLyrics();
+
+        [JsonIgnore]
+        public List<Texture> Covers;
+
+        [JsonIgnore]
+        public Track Track;
+
+        public void InitializeComponents(Storage storage)
+        {
+            Track = new TrackBass(storage.GetStream(audio));
+            var te = new TextureStore(new RawTextureLoaderStore(new StorageBackedResourceStore(storage)), false);
+            foreach (var s in covers)
+            {
+                Covers.Add(te.Get(s));
+            }
+        }
+    }
+}

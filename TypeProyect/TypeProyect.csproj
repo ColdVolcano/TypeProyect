@@ -453,6 +453,9 @@
     <EmbeddedResource Include="Fonts\Venera.fnt" />
     <EmbeddedResource Include="Fonts\Venera_0.png" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+  </ItemGroup>
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\framework\osu.Framework\osu.Framework.csproj" />
   </ItemGroup>
