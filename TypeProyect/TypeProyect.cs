@@ -6,7 +6,6 @@ using System;
 using System.Threading.Tasks;
 using TypeProyect.Screens;
 using osu.Framework.Configuration;
-using osu.Framework.Logging;
 using System.IO;
 
 namespace TypeProyect
@@ -52,19 +51,14 @@ namespace TypeProyect
             Fonts.AddStore(new GlyphStore(Resources, @"Fonts/Venera-Light"));
 
             Metadata = new Bindable<AudioMetadata>();
-
-            Metadata.ValueChanged += newMeta =>
-            {
-                newMeta.InitializeComponents(Host.Storage);
-            };
         }
 
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
-            var m = new AudioMetadata();
-            File.WriteAllText("C:\\Users\\LavainstranterCV\\AppData\\Roaming\\sample-game\\json.txt", Newtonsoft.Json.JsonConvert.SerializeObject(m, Newtonsoft.Json.Formatting.Indented));
+            //var m = new AudioMetadata();
+            //File.WriteAllText("C:\\Users\\LavainstranterCV\\AppData\\Roaming\\sample-game\\json.txt", Newtonsoft.Json.JsonConvert.SerializeObject(m, Newtonsoft.Json.Formatting.Indented));
             dependencies.Cache(this);
 
             LoadComponentSingleFile(new Loader

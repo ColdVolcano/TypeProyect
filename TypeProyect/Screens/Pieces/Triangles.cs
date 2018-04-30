@@ -2,6 +2,7 @@
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES30;
 using osu.Framework.Allocation;
+using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Colour;
@@ -31,8 +32,8 @@ namespace TypeProyect.Screens.Pieces
         public override bool HandleMouseInput => false;
 
 
-        public Color4 ColourLight = Color4.White;
-        public Color4 ColourDark = Color4.Black;
+        public Color4 ColourLight = new Color4(255, 255, 255, 255);
+        public Color4 ColourDark = new Color4(42, 42, 42, 255);
 
         /// <summary>
         /// Whether we want to expire triangles as they exit our draw area completely.
@@ -68,14 +69,20 @@ namespace TypeProyect.Screens.Pieces
         private Shader shader;
         private readonly Texture texture;
 
+        private Bindable<AudioMetadata> meta = new Bindable<AudioMetadata>();
+
         public Triangles()
         {
             texture = Texture.WhitePixel;
+            Colour = new Color4(30, 30, 30, 255);
+            triangleScale = 5;
+            RelativeSizeAxes = Axes.Both;
         }
 
         [BackgroundDependencyLoader]
-        private void load(ShaderManager shaders)
+        private void load(ShaderManager shaders, TypeProyect proyect)
         {
+            meta.BindTo(proyect.Metadata);
             shader = shaders?.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE_ROUNDED);
         }
 
@@ -105,6 +112,8 @@ namespace TypeProyect.Screens.Pieces
         protected override void Update()
         {
             base.Update();
+
+            Velocity = 2.32222f + (float)Math.Pow((meta.Value?.Track?.CurrentAmplitudes.Average ?? 0) * 2 + .5, 2.5);
 
             Invalidate(Invalidation.DrawNode, shallPropagate: false);
 

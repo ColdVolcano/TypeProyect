@@ -1,7 +1,6 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES30;
-using osu.Framework.Audio.Track;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Batches;
@@ -10,6 +9,7 @@ using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Textures;
 using System;
+using osu.Framework.Allocation;
 
 namespace TypeProyect.Screens.Pieces
 {
@@ -33,12 +33,10 @@ namespace TypeProyect.Screens.Pieces
 
         private readonly Texture texture;
 
-        private readonly Bindable<Track> track = new Bindable<Track>();
+        private readonly Bindable<AudioMetadata> meta = new Bindable<AudioMetadata>();
 
-        public Visualisation(Bindable<Track> track)
+        public Visualisation()
         {
-            this.track.BindTo(track);
-            this.track = track;
             texture = Texture.WhitePixel;
             Blending = BlendingMode.Additive;
         }
@@ -47,7 +45,7 @@ namespace TypeProyect.Screens.Pieces
         {
             base.Update();
 
-            float[] temporalAmplitudes = track.Value?.CurrentAmplitudes.FrequencyAmplitudes ?? new float[256];
+            float[] temporalAmplitudes = meta.Value?.Track?.CurrentAmplitudes.FrequencyAmplitudes ?? new float[256];
             for (int i = 0; i < 256; i++)
             {
                 frequencyAmplitudes[i] = Math.Max(frequencyAmplitudes[i] - (float)Time.Elapsed * higherAmplitudes[i] / decay_time, 0);
@@ -56,6 +54,12 @@ namespace TypeProyect.Screens.Pieces
                     higherAmplitudes[i] = frequencyAmplitudes[i] = targetAmplitude;
             }
             Invalidate(Invalidation.DrawNode, shallPropagate: false);
+        }
+
+        [BackgroundDependencyLoader]
+        private void load(TypeProyect proyect)
+        {
+            meta.BindTo(proyect.Metadata);
         }
 
         protected override DrawNode CreateDrawNode() => new VisualisationDrawNode();
@@ -76,7 +80,7 @@ namespace TypeProyect.Screens.Pieces
 
         private class VisualiserSharedData
         {
-            public readonly LinearBatch<TexturedVertex2D> VertexBatch = new LinearBatch<TexturedVertex2D>(100 * 4, 10, PrimitiveType.Quads);
+            public readonly LinearBatch<TexturedVertex2D> VertexBatch = new LinearBatch<TexturedVertex2D>(255 * 4, 10, PrimitiveType.Quads);
         }
 
         private class VisualisationDrawNode : DrawNode
@@ -109,8 +113,8 @@ namespace TypeProyect.Screens.Pieces
 
                         var rectangle = new Quad(
                             Vector2Extensions.Transform(barPosition, DrawInfo.Matrix),
-                            Vector2Extensions.Transform(barPosition + new Vector2(0, barSize.Y), DrawInfo.Matrix),
                             Vector2Extensions.Transform(barPosition + new Vector2(barSize.X, 0), DrawInfo.Matrix),
+                            Vector2Extensions.Transform(barPosition + new Vector2(0, barSize.Y), DrawInfo.Matrix),
                             Vector2Extensions.Transform(barPosition + barSize, DrawInfo.Matrix)
                         );
 
@@ -118,9 +122,7 @@ namespace TypeProyect.Screens.Pieces
                             rectangle,
                             colourInfo,
                             null,
-                            Shared.VertexBatch.Add,
-                            //barSize by itself will make it smooth more in the X axis than in the Y axis, this reverts that.
-                            Vector2.Divide(inflation, barSize.Yx));
+                            Shared.VertexBatch.Add);
                     }
                 }
             }

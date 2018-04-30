@@ -36,7 +36,9 @@ namespace TypeProyect
     {
         public bool HasLyricsInSideAt(LyricSide side, double time)
         {
-            return HasLyricsInListAt(SelectLyricsFromSide(EnglishLyrics, side), time) || HasLyricsInListAt(SelectLyricsFromSide(RomajiLyrics, side), time) || HasLyricsInListAt(SelectLyricsFromSide(KanjiLyrics, side), time);
+            return HasLyricsInListAt(SelectLyricsFromSide(EnglishLyrics, side), time) || 
+                HasLyricsInListAt(SelectLyricsFromSide(RomajiLyrics, side), time) || 
+                HasLyricsInListAt(SelectLyricsFromSide(KanjiLyrics, side), time);
         }
 
         public SortedList<SideLyricPhrase> SelectLyricsFromSide(SortedList<SideLyricPhrase> list, LyricSide side) => (SortedList<SideLyricPhrase>)(list.Where(p => ((int)(p.Side & side) >= 1)));
@@ -44,10 +46,6 @@ namespace TypeProyect
 
     public class LyricPhrase : IComparable
     {
-        public LyricPhrase()
-        {
-            Phrase.Add(new LyricPiece());
-        }
         [JsonProperty("highlighted")]
         public bool Highlighted = false;
 

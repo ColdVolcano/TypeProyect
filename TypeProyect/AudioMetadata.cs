@@ -9,39 +9,32 @@ namespace TypeProyect
 {
     public class AudioMetadata
     {
-        public AudioMetadata()
-        {
-            Lyrics.EnglishLyrics.Add(new LyricPhrase());
-            Lyrics.RomajiLyrics.Add(new LyricPhrase());
-            Lyrics.KanjiLyrics.Add(new LyricPhrase());
-            SideLyrics.EnglishLyrics.Add(new SideLyricPhrase());
-            SideLyrics.RomajiLyrics.Add(new SideLyricPhrase());
-            SideLyrics.KanjiLyrics.Add(new SideLyricPhrase());
-        }
+        [JsonProperty("covers")]
         private List<string> covers = new List<string>();
 
-        private string audio = "";
+        [JsonProperty("audio")]
+        private string audio = "01.mp3";
 
         [JsonProperty("title")]
-        public string Title = "";
+        public string Title = "May I Help You?";
 
         [JsonProperty("titleUnicode")]
-        public string TitleUnicode = "";
+        public string TitleUnicode = "めいあいへるぷゆー？";
 
         [JsonProperty("artist")]
-        public string Artist = "";
+        public string Artist = "Yamagami Lucy..., Miyoshi Saya, Chihaya Megumi";
 
         [JsonProperty("artistUnicode")]
-        public string ArtistUnicode = "";
+        public string ArtistUnicode = "山神ルーシー…、三好紗耶、千早恵";
 
         [JsonProperty("lyrics")]
-        public Lyrics<LyricPhrase> Lyrics = new Lyrics<LyricPhrase>();
+        public Lyrics<LyricPhrase> Lyrics;
 
         [JsonProperty("sideLyrics")]
-        public SideLyrics SideLyrics = new SideLyrics();
+        public SideLyrics SideLyrics;
 
         [JsonIgnore]
-        public List<Texture> Covers;
+        public List<Texture> Covers = new List<Texture>();
 
         [JsonIgnore]
         public Track Track;

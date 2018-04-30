@@ -1,39 +1,35 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using osu.Framework.Allocation;
-using osu.Framework.Audio.Track;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics.Textures;
-using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
-using System.Collections.Generic;
 
 namespace TypeProyect.Screens.Pieces
 {
     public class CoverContainer : Container
     {
         private Storage storage;
-        private readonly List<Texture> textures = new List<Texture>();
         private readonly Sprite cover;
         private readonly Sprite exchangeCover;
         private readonly Container mainContainer;
+        private readonly Container subContainer;
         private int coverIndex = 0;
 
-        public Bindable<int> TrackIndex = new Bindable<int>(0);
-        private Bindable<Track> track = new Bindable<Track>();
+        private Bindable<AudioMetadata> metadata = new Bindable<AudioMetadata>();
 
-        public CoverContainer(Bindable<Track> track)
+        AudioMetadata lastMetadata;
+
+        public CoverContainer()
         {
-            this.track.BindTo(track);
             Masking = true;
 
             Children = new Drawable[]
             {
-                new Container
+                subContainer = new Container
                 {
                     Masking = true,
                     Anchor = Anchor.Centre,
@@ -70,39 +66,37 @@ namespace TypeProyect.Screens.Pieces
                 }
             };
 
-            TrackIndex.ValueChanged += TrackChanged;
-            track.ValueChanged += restoreChanges;
+            metadata.ValueChanged += restoreChanges;
         }
 
-        private void restoreChanges(Track t) => Scheduler.Add(() => this.ScaleTo(1).Then().Delay(30000 - t.CurrentTime + Time.Elapsed).Then().ScaleTo(1).OnComplete(_ => UpdateCover()));
-
-        private void TrackChanged(int n)
+        private void restoreChanges(AudioMetadata newMeta)
         {
-            var te = new TextureStore(new RawTextureLoaderStore(new StorageBackedResourceStore(storage)), false);
-
-            textures.Clear();
-            textures.Add(te.Get($"{n:00}.jpg"));
-
-            for (int i = 1; storage.Exists($"{n:00}-{i}.jpg"); i++)
-                textures.Add(te.Get($"{n:00}-{i}.jpg"));
+            Scheduler.Add(() => mainContainer.ScaleTo(1).Then().Delay(30000 - newMeta.Track.CurrentTime + Time.Elapsed).Then().ScaleTo(1).OnComplete(_ => UpdateCover()));
 
             exchangeCover.Texture = cover.Texture;
-            cover.Texture = textures[coverIndex = 0];
+            cover.Texture = newMeta.Covers[coverIndex = 0];
 
-            mainContainer.MoveToX(1).Then().MoveToX(0, 500, Easing.OutQuart);
+            if (lastMetadata != null)
+            {
+                subContainer.Show();
+                mainContainer.MoveToX(1).Then().MoveToX(0, 500, Easing.OutQuart).OnComplete(_ => subContainer.Hide());
+            }
+            lastMetadata = newMeta;
         }
 
         private void UpdateCover()
         {
             base.Update();
 
-            if (textures.Count > 1 && track.Value.Length - track.Value.CurrentTime > 2000)
+            var textures = metadata.Value?.Covers;
+            var track = metadata.Value?.Track;
+            if (textures?.Count > 1 && track.Length - track.CurrentTime > 2000)
             {
                 if (coverIndex >= textures.Count - 1)
                     coverIndex = -1;
-                this.ScaleTo(new Vector2(0, 1), 750 / 2f, Easing.InExpo)
+                mainContainer.ScaleTo(new Vector2(0, 1), 750 / 2f, Easing.InExpo)
                     .OnComplete(_ => cover.Texture = textures[++coverIndex]);
-                this.Delay(750 / 2f)
+                mainContainer.Delay(750 / 2f)
                     .Then()
                     .ScaleTo(1, 750 / 2f, Easing.OutExpo)
                     .Then()
@@ -114,16 +108,16 @@ namespace TypeProyect.Screens.Pieces
         }
 
         [BackgroundDependencyLoader]
-        private void load(Storage storage)
+        private void load(Storage storage, TypeProyect proyect)
         {
             this.storage = storage;
+            metadata.BindTo(proyect.Metadata);
         }
 
         private class UnknownAlbumArt : BufferedContainer
         {
             public UnknownAlbumArt()
             {
-                CacheDrawnFrameBuffer = true;
                 RelativePositionAxes = Axes.Both;
                 RelativeSizeAxes = Axes.Both;
                 Children = new Drawable[]
