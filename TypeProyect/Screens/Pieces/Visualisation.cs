@@ -10,6 +10,7 @@ using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Textures;
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Graphics.Shaders;
 
 namespace TypeProyect.Screens.Pieces
 {
@@ -56,9 +57,12 @@ namespace TypeProyect.Screens.Pieces
             Invalidate(Invalidation.DrawNode, shallPropagate: false);
         }
 
+        private Shader shader;
+
         [BackgroundDependencyLoader]
-        private void load(TypeProyect proyect)
+        private void load(TypeProyect proyect, ShaderManager shaders)
         {
+            shader = shaders?.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE);
             meta.BindTo(proyect.Metadata);
         }
 
@@ -75,6 +79,7 @@ namespace TypeProyect.Screens.Pieces
             visNode.Texture = texture;
             visNode.Size = DrawSize;
             visNode.Shared = sharedData;
+            visNode.Shader = shader;
             visNode.AudioData = frequencyAmplitudes;
         }
 
@@ -88,6 +93,7 @@ namespace TypeProyect.Screens.Pieces
             public Texture Texture;
             public VisualiserSharedData Shared;
             public Vector2 Size;
+            public Shader Shader;
             public float[] AudioData;
 
             public override void Draw(Action<TexturedVertex2D> vertexAction)
@@ -95,6 +101,8 @@ namespace TypeProyect.Screens.Pieces
                 base.Draw(vertexAction);
 
                 Texture.TextureGL.Bind();
+
+                Shader.Bind();
 
                 Vector2 inflation = DrawInfo.MatrixInverse.ExtractScale().Xy;
 
@@ -125,6 +133,8 @@ namespace TypeProyect.Screens.Pieces
                             Shared.VertexBatch.Add);
                     }
                 }
+
+                Shader.Unbind();
             }
         }
     }
