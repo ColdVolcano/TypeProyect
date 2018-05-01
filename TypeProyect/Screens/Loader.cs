@@ -37,15 +37,19 @@ namespace TypeProyect.Screens
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            game.LoadComponentSingleFile(new ProgressContainer { Depth = -1 }, Add);
+            game.LoadComponentSingleFile(new ProgressContainer
+            {
+                Depth = -1,
+                Position = new Vector2(192, 614),
+                Width = 1536,
+            }, Add);
             game.LoadComponentSingleFile(triangles = new Triangles() { Velocity = 2.5f }, Add);
             game.LoadComponentSingleFile(coverContainer = new CoverContainer()
             {
                 Position = new Vector2(192, 147f),
                 Size = new Vector2(375),
             }, Add);
-            game.LoadComponentSingleFile(
-            new Visualisation()
+            game.LoadComponentSingleFile(new Visualisation()
             {
                 Position = new Vector2(192, 614),
                 Size = new Vector2(1536, 460),

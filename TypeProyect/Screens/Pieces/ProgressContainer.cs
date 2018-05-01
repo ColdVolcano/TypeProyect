@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Linq;
+﻿using System.Collections.Generic;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Allocation;
-using osu.Framework.IO;
 using OpenTK.Graphics;
 using osu.Framework.Platform;
 using OpenTK;
@@ -30,6 +26,7 @@ namespace TypeProyect.Screens.Pieces
         public ProgressContainer()
         {
             AutoSizeAxes = Axes.Y;
+            Origin = Anchor.BottomLeft;
             Children = new Drawable[]
             {
                 timeText = new SpriteText
@@ -46,9 +43,9 @@ namespace TypeProyect.Screens.Pieces
                     EdgeSmoothness = new Vector2(1),
                     RelativePositionAxes = Axes.X,
                     Size = new Vector2(13),
-                    Anchor = Anchor.TopLeft,
+                    Anchor = Anchor.BottomLeft,
                     Origin = Anchor.TopCentre,
-                    Position = new Vector2(0, 37),
+                    Position = new Vector2(0, -41.5f),
                 },
                 new Box
                 {
@@ -63,6 +60,8 @@ namespace TypeProyect.Screens.Pieces
                     RelativeSizeAxes = Axes.X,
                     Height = 40,
                     Masking = true,
+                    Anchor = Anchor.BottomLeft,
+                    Origin = Anchor.BottomLeft,
                     Children = new Drawable[]
                     {
                         progress = new Container
@@ -109,6 +108,7 @@ namespace TypeProyect.Screens.Pieces
                 AudioMetadata meta = JsonConvert.DeserializeObject<AudioMetadata>(r.ReadToEnd());
                 meta.InitializeComponents(storage);
                 proyect.Metadata.Value = meta;
+                progress.ResizeWidthTo(0, 750, Easing.OutExpo);
                 proyect.Audio.Track.AddItemToList(meta.Track);
                 meta.Track.Restart();
             }
@@ -122,7 +122,9 @@ namespace TypeProyect.Screens.Pieces
 
             if (track?.IsLoaded ?? false)
             {
-                //Change time position
+                float pp = (float)(track.CurrentTime / track.Length);
+                progress.ResizeWidthTo(pp);
+                triangle.MoveToX(pp);
 
                 if (track.HasCompleted && !track.Looping)
                     playNext();

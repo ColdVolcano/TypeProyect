@@ -81,6 +81,8 @@ namespace TypeProyect.Screens.Pieces
                 subContainer.Show();
                 mainContainer.MoveToX(1).Then().MoveToX(0, 500, Easing.OutQuart).OnComplete(_ => subContainer.Hide());
             }
+            else
+                subContainer.Hide();
             lastMetadata = newMeta;
         }
 
