@@ -19,7 +19,7 @@ namespace TypeProyect.Screens.Pieces
         /// <summary>
         /// How much should each bar go down each milisecond (based on a full bar).
         /// </summary>
-        private const float decay_time = 125f;
+        private const float decay_time = 150f;
 
         /// <summary>
         /// Number of milliseconds between each amplitude update.
