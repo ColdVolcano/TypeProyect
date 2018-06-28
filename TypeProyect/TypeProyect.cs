@@ -67,6 +67,11 @@ namespace TypeProyect
             }, Add);
         }
 
+        public void Cache<T>(T instance) where T : class
+        {
+            dependencies.Cache(instance);
+        }
+
         private Task asyncLoadStream;
 
         public void LoadComponentSingleFile<T>(T d, Action<T> add)
