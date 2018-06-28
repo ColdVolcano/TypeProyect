@@ -16,6 +16,7 @@ namespace TypeProyect.Screens
         private GameHost host;
         private CoverContainer coverContainer;
         private Triangles triangles;
+        private ProgressContainer progress;
 
         private readonly List<Shader> loadTargets = new List<Shader>();
 
@@ -37,17 +38,18 @@ namespace TypeProyect.Screens
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            game.LoadComponentSingleFile(new ProgressContainer
+            game.LoadComponentSingleFile(progress = new ProgressContainer
             {
                 Depth = -1,
                 Position = new Vector2(192, 614),
                 Width = 1536,
             }, Add);
+
             game.LoadComponentSingleFile(triangles = new Triangles() { Velocity = 2.5f }, Add);
             game.LoadComponentSingleFile(coverContainer = new CoverContainer()
             {
-                Position = new Vector2(192, 147f),
-                Size = new Vector2(375),
+                Position = new Vector2(192, 140),
+                Size = new Vector2(325),
             }, Add);
             game.LoadComponentSingleFile(new Visualisation()
             {
