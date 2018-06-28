@@ -6,14 +6,11 @@ using System;
 using System.Threading.Tasks;
 using TypeProyect.Screens;
 using osu.Framework.Configuration;
-using System.IO;
 
 namespace TypeProyect
 {
     internal class TypeProyect : Game
     {
-        protected override string MainResourceFile => "TypeProyect.dll";
-
         private DependencyContainer dependencies;
 
         public Bindable<AudioMetadata> Metadata;
@@ -24,6 +21,7 @@ namespace TypeProyect
         [BackgroundDependencyLoader]
         private void load()
         {
+            Resources.AddStore(new DllResourceStore(@"TypeProyect.dll"));
             dependencies.Cache(Fonts = new FontStore { ScaleAdjust = 100 });
 
             Fonts.AddStore(new GlyphStore(Resources, @"Fonts/FontAwesome"));

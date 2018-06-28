@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\framework\osu.Framework.props" />
   <PropertyGroup Label="Project">
-    <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
     <OutputType>WinExe</OutputType>
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
@@ -455,8 +455,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-  </ItemGroup>
-  <ItemGroup Label="Project References">
-    <ProjectReference Include="..\framework\osu.Framework\osu.Framework.csproj" />
+    <PackageReference Include="ppy.osu.Framework" Version="2018.626.0" />
   </ItemGroup>
 </Project>
