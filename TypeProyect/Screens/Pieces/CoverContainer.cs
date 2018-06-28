@@ -74,7 +74,7 @@ namespace TypeProyect.Screens.Pieces
             Scheduler.Add(() => mainContainer.ScaleTo(1).Then().Delay(30000 - newMeta.Track.CurrentTime + Time.Elapsed).Then().ScaleTo(1).OnComplete(_ => UpdateCover()));
 
             exchangeCover.Texture = cover.Texture;
-            cover.Texture = newMeta.Covers[coverIndex = 0];
+            cover.Texture = newMeta.Covers.Count == 0 ? null : newMeta.Covers[coverIndex = 0];
 
             if (lastMetadata != null)
             {
@@ -160,19 +160,19 @@ namespace TypeProyect.Screens.Pieces
                     Origin = Anchor.Centre;
                     Children = new Drawable[]
                     {
-                    new Box
-                    {
-                        Colour = gray ? g : Color4.Black,
-                        RelativeSizeAxes = Axes.Both,
-                    },
-                    new SpriteText
-                    {
-                        Anchor = Anchor.Centre,
-                        Origin = Anchor.Centre,
-                        Text = ((char)0xf128).ToString(),
-                        Colour = gray ? Color4.Black : g,
-                        TextSize = 210,
-                    }
+                        new Box
+                        {
+                            Colour = gray ? g : Color4.Black,
+                            RelativeSizeAxes = Axes.Both,
+                        },
+                        new SpriteText
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            Text = ((char)0xf128).ToString(),
+                            Colour = gray ? Color4.Black : g,
+                            TextSize = 210,
+                        }
                     };
                 }
             }
