@@ -40,7 +40,8 @@ namespace TypeProyect.Screens.Pieces
                         new UnknownAlbumArt(),
                         exchangeCover = new Sprite
                         {
-                            RelativePositionAxes = Axes.Both,
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
                             RelativeSizeAxes = Axes.Both,
                             FillMode = FillMode.Fill,
                         }
