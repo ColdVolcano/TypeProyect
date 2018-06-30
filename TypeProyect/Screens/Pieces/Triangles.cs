@@ -32,8 +32,8 @@ namespace TypeProyect.Screens.Pieces
         public override bool HandleMouseInput => false;
 
 
-        public Color4 ColourLight = new Color4(255, 255, 255, 255);
-        public Color4 ColourDark = new Color4(42, 42, 42, 255);
+        public Color4 ColourLight = new Color4(30, 30, 30, 175);
+        public Color4 ColourDark = new Color4(5, 5, 5, 175);
 
         /// <summary>
         /// Whether we want to expire triangles as they exit our draw area completely.
@@ -48,7 +48,7 @@ namespace TypeProyect.Screens.Pieces
         /// <summary>
         /// The amount of triangles we want compared to the default distribution.
         /// </summary>
-        protected virtual float SpawnRatio => 1;
+        protected virtual float SpawnRatio => 1.2f;
 
         private float triangleScale = 1;
 
@@ -74,7 +74,6 @@ namespace TypeProyect.Screens.Pieces
         public Triangles()
         {
             texture = Texture.WhitePixel;
-            Colour = new Color4(30, 30, 30, 255);
             triangleScale = 5;
             RelativeSizeAxes = Axes.Both;
         }
