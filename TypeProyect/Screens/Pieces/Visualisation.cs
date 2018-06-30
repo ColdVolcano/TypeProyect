@@ -21,11 +21,6 @@ namespace TypeProyect.Screens.Pieces
         /// </summary>
         private const float decay_time = 150f;
 
-        /// <summary>
-        /// Number of milliseconds between each amplitude update.
-        /// </summary>
-        private const float time_between_updates = 50;
-
         private readonly float[] frequencyAmplitudes = new float[256];
         private readonly float[] higherAmplitudes = new float[256];
 
