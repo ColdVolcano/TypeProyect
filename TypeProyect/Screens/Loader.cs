@@ -1,5 +1,6 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
+using OpenTK.Input;
 using osu.Framework.Allocation;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
@@ -7,7 +8,10 @@ using osu.Framework.Graphics.Shaders;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
 using System.Collections.Generic;
+using System.Linq;
 using TypeProyect.Screens.Pieces;
+using Id3;
+using System.IO;
 
 namespace TypeProyect.Screens
 {
@@ -25,15 +29,15 @@ namespace TypeProyect.Screens
         [BackgroundDependencyLoader]
         private void load(Storage storage, GameHost host, ShaderManager manager, FrameworkConfigManager config, TypeProyect game)
         {
-            this.host = host;
             this.storage = storage;
+            this.host = host;
             this.game = game;
             loadTargets.Add(manager.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE_ROUNDED));
             loadTargets.Add(manager.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.BLUR));
             loadTargets.Add(manager.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE));
             loadTargets.Add(manager.Load(VertexShaderDescriptor.TEXTURE_3, FragmentShaderDescriptor.TEXTURE_ROUNDED));
             loadTargets.Add(manager.Load(VertexShaderDescriptor.TEXTURE_3, FragmentShaderDescriptor.TEXTURE));
-            config.GetBindable<WindowMode>(FrameworkSetting.WindowMode).Value = WindowMode.Borderless;
+            config.GetBindable<WindowMode>(FrameworkSetting.WindowMode).Value = WindowMode.Fullscreen;
             config.GetBindable<FrameSync>(FrameworkSetting.FrameSync).Value = FrameSync.Unlimited;
         }
 
@@ -56,15 +60,15 @@ namespace TypeProyect.Screens
             game.LoadComponentSingleFile(new TitleContainer(Anchor.BottomLeft)
             {
                 Position = new Vector2(550, 140),
-                TextSize = 110,
+                TextSize = 100,
                 Font = "Exo2.0-Bold",
                 PreferredText = MetadataTypes.TitleUnicode,
                 Width = 1176,
             }, Add);
             game.LoadComponentSingleFile(new TitleContainer(Anchor.TopLeft)
             {
-                Position = new Vector2(550, 365),
-                TextSize = 60,
+                Position = new Vector2(550, 345),
+                TextSize = 70,
                 Font = "Exo2.0-Medium",
                 PreferredText = MetadataTypes.ArtistUnicode,
                 Width = 1176,
@@ -77,5 +81,34 @@ namespace TypeProyect.Screens
                 Size = new Vector2(1536, 460),
             }, Add);
         }
+
+        public void ImportSongs(object sender, FileDropEventArgs e)
+        {
+            ImportPaths(e.FileName)
+        }
+
+        public void ImportPaths(params string[] paths)
+        {
+            if (paths.Any(p => checkExtension(Path.GetExtension(p))))
+                return;
+            foreach (string p in paths)
+            {
+                AudioMetadata meta = new AudioMetadata();
+                using (var mp3 = new Mp3(p))
+                {
+                    Id3Tag tag = mp3.GetTag(Id3TagFamily.Version2X);
+                    if (tag.CustomTexts.Count > 0 && tag.CustomTexts.Any(t => t.Value.StartsWith("DISPLAY ARTIST\0")))
+                        meta.Artist = meta.ArtistUnicode = tag.CustomTexts.First(t => t.Value.StartsWith("DISPLAY ARTIST\0")).Value.Split("DISPLAY ARTIST\0")[1];
+                    else if (tag.Artists.Value.Count > 0)
+                        meta.Artist = meta.ArtistUnicode = tag.Artists.Value[0];
+                    else
+                        meta.Artist = meta.ArtistUnicode = "Unkown Artist";
+                    meta.Title = meta.TitleUnicode = tag.Title.Value ?? "Unkown Title";
+                }
+                progress.AddSong(meta, p);
+            }
+        }
+
+        private bool checkExtension(string ext) => ext != ".mp3";
     }
 }

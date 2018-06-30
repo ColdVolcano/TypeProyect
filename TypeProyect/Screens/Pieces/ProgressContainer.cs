@@ -13,6 +13,7 @@ using osu.Framework.Configuration;
 using osu.Framework.Graphics.Transforms;
 using System;
 using osu.Framework.Input;
+using Id3;
 
 namespace TypeProyect.Screens.Pieces
 {
@@ -156,8 +157,49 @@ namespace TypeProyect.Screens.Pieces
             barsHovered.TriggerChange();
         }
 
+        public void AddSong(AudioMetadata meta, string path)
+        {
+            string number = $"{ metadataList.Count + 1}";
+            string s = "";
+            using (var mp3 = new Mp3(path))
+            {
+                Id3Tag tag = mp3.GetTag(Id3TagFamily.Version2X);
+                if (tag.Pictures.Count > 0)
+                {
+                    s = tag.Pictures[0].GetExtension();
+                    if (s == "jpeg" || s == "jpg")
+                        s = ".jpg";
+                    else if (s == "png")
+                        s = ".png";
+                    using (var ds = storage.GetStream($"{number}{s}", FileAccess.Write, FileMode.Create))
+                        tag.Pictures[0].SaveImage(ds);
+                }
+
+            }
+            meta.CoverFiles.Add($"{number}{s}");
+            using (var d = new FileStream(path, FileMode.Open))
+            {
+                using (var e = storage.GetStream($"{number}{Path.GetExtension(path)}", FileAccess.Write, FileMode.Create))
+                {
+                    byte[] arr = new byte[d.Length];
+                    d.Read(arr, 0, arr.Length);
+                    e.Write(arr, 0, arr.Length);
+                }
+            }
+            meta.AudioFile = $"{number}{Path.GetExtension(path)}";
+            metadataList.Add($"{number}.json");
+            using (StreamWriter stream = new StreamWriter(storage.GetStream($"{number}.json", FileAccess.ReadWrite, FileMode.Create)))
+                stream.Write(JsonConvert.SerializeObject(meta, Formatting.Indented));
+            using (StreamWriter mainFile = new StreamWriter(storage.GetStream("list.json", FileAccess.Write, FileMode.Create)))
+                mainFile.Write(JsonConvert.SerializeObject(metadataList, Formatting.Indented));
+            if (!(proyect.Metadata.Value?.Track.IsRunning ?? false))
+                playNext();
+        }
+
         private void playNext()
         {
+            if (metadataList.Count == 0)
+                return;
             if (index == metadataList.Count - 1)
                 index = -1;
 
@@ -198,7 +240,6 @@ namespace TypeProyect.Screens.Pieces
             {
                 float pp = (float)(track.CurrentTime / track.Length);
                 progress.ResizeWidthTo(pp);
-                //triangle.MoveToX(pp);
                 timeText.Text = formatTime(TimeSpan.FromMilliseconds(track.CurrentTime));
 
                 if (track.HasCompleted && !track.Looping)

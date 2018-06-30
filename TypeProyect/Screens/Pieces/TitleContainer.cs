@@ -52,7 +52,6 @@ namespace TypeProyect.Screens.Pieces
                     {
                         Anchor = textAnchor,
                         Origin = textAnchor,
-                        TextAnchor = textAnchor,
                         RelativeSizeAxes = Axes.X,
                         AutoSizeAxes = Axes.Y,
                     }
@@ -65,7 +64,6 @@ namespace TypeProyect.Screens.Pieces
         {
             meta.BindTo(type.Metadata);
             meta.ValueChanged += transition;
-            meta.TriggerChange();
         }
 
         private void transition(AudioMetadata newMeta)

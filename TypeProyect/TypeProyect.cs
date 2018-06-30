@@ -6,12 +6,16 @@ using System;
 using System.Threading.Tasks;
 using TypeProyect.Screens;
 using osu.Framework.Configuration;
+using osu.Framework.Platform;
+using OpenTK.Input;
 
 namespace TypeProyect
 {
     internal class TypeProyect : Game
     {
         private DependencyContainer dependencies;
+
+        private Loader loader;
 
         public Bindable<AudioMetadata> Metadata;
 
@@ -59,7 +63,7 @@ namespace TypeProyect
             //File.WriteAllText("C:\\Users\\LavainstranterCV\\AppData\\Roaming\\sample-game\\json.txt", Newtonsoft.Json.JsonConvert.SerializeObject(m, Newtonsoft.Json.Formatting.Indented));
             dependencies.Cache(this);
 
-            LoadComponentSingleFile(new Loader
+            LoadComponentSingleFile(loader = new Loader
             {
                 RelativeSizeAxes = Axes.Both
             }, Add);
@@ -76,6 +80,22 @@ namespace TypeProyect
             where T : Drawable
         {
             Schedule(() => { asyncLoadStream = asyncLoadStream?.ContinueWith(t => LoadComponentAsync(d, add).Wait()) ?? LoadComponentAsync(d, add); });
+        }
+
+        public override void SetHost(GameHost host)
+        {
+            base.SetHost(host);
+
+            var a = host.Window as DesktopGameWindow;
+
+            a.Title = "TypeProyect";
+
+            a.FileDrop += importSongs;
+        }
+
+        private void importSongs(object sender, FileDropEventArgs args)
+        {
+            loader.ImportSongs(sender, args);
         }
     }
 }
