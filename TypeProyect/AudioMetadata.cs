@@ -10,22 +10,22 @@ namespace TypeProyect
     public class AudioMetadata
     {
         [JsonProperty("covers")]
-        private List<string> covers = new List<string>();
+        public List<string> CoverFiles = new List<string>();
 
         [JsonProperty("audio")]
-        private string audio = "01.mp3";
+        public string AudioFile = "";
 
         [JsonProperty("title")]
-        public string Title = "May I Help You?";
+        public string Title = "";
 
         [JsonProperty("titleUnicode")]
-        public string TitleUnicode = "めいあいへるぷゆー？";
+        public string TitleUnicode = "";
 
         [JsonProperty("artist")]
-        public string Artist = "Yamagami Lucy..., Miyoshi Saya, Chihaya Megumi";
+        public string Artist = "";
 
         [JsonProperty("artistUnicode")]
-        public string ArtistUnicode = "山神ルーシー…、三好紗耶、千早恵";
+        public string ArtistUnicode = "";
 
         [JsonProperty("lyrics")]
         public Lyrics<LyricPhrase> Lyrics;
@@ -41,9 +41,9 @@ namespace TypeProyect
 
         public void InitializeComponents(Storage storage)
         {
-            Track = new TrackBass(storage.GetStream(audio));
+            Track = new TrackBass(storage.GetStream(AudioFile));
             var te = new TextureStore(new RawTextureLoaderStore(new StorageBackedResourceStore(storage)), false);
-            foreach (var s in covers)
+            foreach (var s in CoverFiles)
             {
                 Covers.Add(te.Get(s));
             }
