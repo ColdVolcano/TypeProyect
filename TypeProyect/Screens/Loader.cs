@@ -84,7 +84,7 @@ namespace TypeProyect.Screens
 
         public void ImportSongs(object sender, FileDropEventArgs e)
         {
-            ImportPaths(e.FileName)
+            ImportPaths(e.FileName);
         }
 
         public void ImportPaths(params string[] paths)
