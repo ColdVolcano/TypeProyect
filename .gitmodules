@@ -4,3 +4,7 @@
 [submodule "osu-f"]
 	path = osu-f
 	url = https://github.com/ppy/osu-framework.git
+[submodule "cv"]
+	path = fw
+	url = https://github.com/ColdVolcano/osu-framework.git
+	branch = type-proyect

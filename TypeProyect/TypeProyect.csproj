@@ -457,6 +457,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\osu-f\osu.Framework\osu.Framework.csproj" />
+    <ProjectReference Include="..\fw\osu.Framework\osu.Framework.csproj" />
   </ItemGroup>
 </Project>
