@@ -126,16 +126,22 @@ namespace TypeProyect.Screens.Pieces
         {
             if (proyect.Metadata.Value?.Track?.IsLoaded ?? false)
             {
-                triangle.MoveToY(value ? -1 : 13, 200, Easing.OutCubic);
-                timeText.ResizeTextHeightTo(value ? 45 - 14f : 45, 200, Easing.OutCubic);
-                if (!value)
+                triangle.MoveToY(value || dragged ? -1 : 13, 200, Easing.OutCubic);
+                timeText.ResizeTextHeightTo(value || dragged ? 45 - 14f : 45, 200, Easing.OutCubic);
+                if (!value || dragged)
+                {
                     timeText.FadeIn(200, Easing.OutCubic);
-                xyz = false;
-                totalTimeText.ResizeTextHeightTo(value ? 45 - 14f : 45, 200, Easing.OutCubic);
-                if (!value)
+                    xyz = false;
+                }
+                totalTimeText.ResizeTextHeightTo(value || dragged ? 45 - 14f : 45, 200, Easing.OutCubic);
+                if (!value || dragged)
+                {
                     totalTimeText.FadeIn(200, Easing.OutCubic);
-                zyx = false;
-                hoverTimeText.FadeTo(value ? 1 : 0, 200, Easing.OutCubic);
+                    zyx = false;
+                }
+                hoverTimeText.FadeTo(value || dragged ? 1 : 0, 200, Easing.OutCubic);
+                if (value || dragged)
+                    TriggerOnMouseMove(s);
             }
         }
 
@@ -151,10 +157,12 @@ namespace TypeProyect.Screens.Pieces
             }
             using (StreamReader r = new StreamReader(storage.GetStream("list.json")))
                 metadataList = JsonConvert.DeserializeObject<List<string>>(r.ReadToEnd());
-            playNext();
-            proyect.Cache(this);
-            barsHovered.ValueChanged += trianglePopUp;
-            barsHovered.TriggerChange();
+            Schedule(() =>
+            {
+                playNext();
+                barsHovered.ValueChanged += trianglePopUp;
+                barsHovered.TriggerChange();
+            });
         }
 
         public void AddSong(AudioMetadata meta, string path)
@@ -220,14 +228,22 @@ namespace TypeProyect.Screens.Pieces
             {
                 AudioMetadata meta = JsonConvert.DeserializeObject<AudioMetadata>(r.ReadToEnd());
                 meta.InitializeComponents(storage);
+                if (proyect.Metadata.Value?.Track != null)
+                {
+                    proyect.Metadata.Value.Track.Stop();
+                    proyect.Metadata.Value.Track.Dispose();
+                }
                 proyect.Metadata.Value = meta;
                 proyect.Audio.Track.AddItemToList(meta.Track);
                 meta.Track.Restart();
             }
+            hoverTimeText.Text = formatTime(TimeSpan.FromMilliseconds((proyect.Metadata.Value?.Track?.Length ?? 0) * hoverTimeText.Position.X));
             totalTimeText.Text = formatTime(TimeSpan.FromMilliseconds(proyect.Metadata.Value?.Track?.Length ?? 0));
         }
 
         private string formatTime(TimeSpan t) => $"{Math.Floor(t.Duration().TotalMinutes)}:{t.Duration().Seconds:D2}";
+
+        private double currentTime;
 
         protected override void Update()
         {
@@ -238,7 +254,10 @@ namespace TypeProyect.Screens.Pieces
 
             if (track?.IsLoaded ?? false)
             {
-                float pp = (float)(track.CurrentTime / track.Length);
+                if (!dragged)
+                    currentTime = track.CurrentTime;
+
+                float pp = (float)(currentTime / track.Length);
                 progress.ResizeWidthTo(pp);
                 timeText.Text = formatTime(TimeSpan.FromMilliseconds(track.CurrentTime));
 
@@ -249,14 +268,18 @@ namespace TypeProyect.Screens.Pieces
 
         private bool xyz = false;
         private bool zyx = false;
+        private InputState s;
 
         protected override bool OnMouseMove(InputState state)
         {
-            if (barsHovered)
+            s = state;
+            if (barsHovered || dragged)
             {
-                float f = ToLocalSpace(state.Mouse.Position).X / barContainer.DrawSize.X;
+                float f = MathHelper.Clamp(ToLocalSpace(state.Mouse.Position).X / barContainer.DrawSize.X, 0, 1);
                 triangle.MoveToX(f);
                 hoverTimeText.MoveToX(f);
+                if (dragged)
+                    currentTime = (proyect.Metadata.Value?.Track?.Length ?? 0) * f;
                 hoverTimeText.Text = formatTime(TimeSpan.FromMilliseconds((proyect.Metadata.Value?.Track?.Length ?? 0) * f));
                 if (hoverTimeText.BoundingBox.IntersectsWith(timeText.BoundingBox))
                 {
@@ -288,9 +311,39 @@ namespace TypeProyect.Screens.Pieces
             return base.OnMouseMove(state);
         }
 
+        private bool dragged = false;
+
         protected override bool OnDragStart(InputState state)
         {
+            dragged = true;
+            var t = proyect.Metadata.Value?.Track;
+            if (barsHovered && (t?.IsLoaded ?? false))
+                proyect.Metadata.Value?.Track.Stop();
             return true;
+        }
+
+        protected override bool OnDrag(InputState state)
+        {
+            TriggerOnMouseMove(state);
+            return base.OnDrag(state);
+        }
+
+        protected override bool OnDragEnd(InputState state)
+        {
+            dragged = false;
+            barsHovered.TriggerChange();
+            var t = proyect.Metadata.Value?.Track;
+            if ((t?.IsLoaded ?? false))
+            {
+                if (triangle.Position.X != 1)
+                {
+                    t.Seek(MathHelper.Clamp(t.Length * triangle.Position.X, 0, t.Length));
+                    t.Start();
+                }
+                else
+                    playNext();
+            }
+            return base.OnDragEnd(state);
         }
 
         protected override bool OnClick(InputState state)
@@ -299,9 +352,7 @@ namespace TypeProyect.Screens.Pieces
             if (barsHovered && (t?.IsLoaded ?? false))
             {
                 float f = ToLocalSpace(state.Mouse.Position).X / barContainer.DrawSize.X;
-                progress.ResizeWidthTo(f, 500, Easing.OutExpo);
-                progress.Delay(500);
-                t.Seek(f * t.Length);
+                t.Seek(MathHelper.Clamp(f * t.Length, 0, t.Length));
             }
             return base.OnClick(state);
         }
