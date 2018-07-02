@@ -81,7 +81,14 @@ namespace TypeProyect.Screens.Pieces
             if (lastMetadata != null)
             {
                 subContainer.Show();
-                mainContainer.MoveToX(1).Then().MoveToX(0, 500, Easing.OutQuart).OnComplete(_ => subContainer.Hide());
+                mainContainer.MoveToX(1)
+                    .Then()
+                    .MoveToX(0, 500, Easing.OutQuart)
+                    .OnComplete(_ =>
+                    {
+                        exchangeCover.Texture = null;
+                        subContainer.Hide();
+                    });
             }
             else
                 subContainer.Hide();
