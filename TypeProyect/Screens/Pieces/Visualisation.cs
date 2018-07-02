@@ -21,8 +21,8 @@ namespace TypeProyect.Screens.Pieces
         /// </summary>
         private const float decay_time = 150f;
 
-        private readonly float[] frequencyAmplitudes = new float[256];
-        private readonly float[] higherAmplitudes = new float[256];
+        private readonly float[] frequencyAmplitudes = new float[1024];
+        private readonly float[] higherAmplitudes = new float[1024];
 
         public override bool HandleKeyboardInput => false;
         public override bool HandleMouseInput => false;
@@ -40,9 +40,8 @@ namespace TypeProyect.Screens.Pieces
         protected override void Update()
         {
             base.Update();
-
-            float[] temporalAmplitudes = meta.Value?.Track?.CurrentAmplitudes.FrequencyAmplitudes ?? new float[256];
-            for (int i = 0; i < 256; i++)
+            float[] temporalAmplitudes = meta.Value?.Track?.CurrentAmplitudes.FrequencyAmplitudes ?? new float[1024];
+            for (int i = 0; i < 1024; i++)
             {
                 frequencyAmplitudes[i] = Math.Max(frequencyAmplitudes[i] - (float)Time.Elapsed * higherAmplitudes[i] / decay_time, 0);
                 float targetAmplitude = (float)Math.Log(Math.Pow(temporalAmplitudes[i], 0.9) + 1, 2);
@@ -102,17 +101,19 @@ namespace TypeProyect.Screens.Pieces
                 Vector2 inflation = DrawInfo.MatrixInverse.ExtractScale().Xy;
 
                 ColourInfo colourInfo = DrawInfo.Colour;
-                colourInfo.ApplyChild(new Color4(1, 1, 1, 0.25f));
+                colourInfo.ApplyChild(new Color4(1, 1, 1, 0.15f));
 
                 if (AudioData != null)
                 {
-                    float limit = 64 * 3 + 63 * 1;
+                    int maxColumns = 128;
+                    float inverseRatio = 12;
+                    float limit = maxColumns * (inverseRatio - 1) + (maxColumns - 1);
 
-                    for (int i = 0; i < 255; i++)
+                    for (int i = 0; i < 1023; i++)
                     {
-                        var barPosition = new Vector2(((i % 64) * 4 / limit) * Size.X, 0);
+                        var barPosition = new Vector2(((i % maxColumns) * inverseRatio / limit) * Size.X, 0);
 
-                        var barSize = new Vector2(Size.X * 3 / limit, Size.Y * AudioData[i + 1]);
+                        var barSize = new Vector2(Size.X * (inverseRatio - 1) / limit, Size.Y * AudioData[i + 1]);
 
                         var rectangle = new Quad(
                             Vector2Extensions.Transform(barPosition, DrawInfo.Matrix),
