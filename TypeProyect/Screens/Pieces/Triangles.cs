@@ -32,8 +32,8 @@ namespace TypeProyect.Screens.Pieces
         public override bool HandleMouseInput => false;
 
 
-        public Color4 ColourLight = new Color4(30, 30, 30, 175);
-        public Color4 ColourDark = new Color4(5, 5, 5, 175);
+        public Color4 ColourLight = new Color4(30, 30, 30, 255);
+        public Color4 ColourDark = new Color4(5, 5, 5, 255);
 
         /// <summary>
         /// Whether we want to expire triangles as they exit our draw area completely.
