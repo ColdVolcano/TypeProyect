@@ -9,11 +9,11 @@ using OpenTK;
 using Newtonsoft.Json;
 using System.IO;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.Configuration;
 using osu.Framework.Graphics.Transforms;
 using System;
 using osu.Framework.Input;
 using Id3;
+using OpenTK.Input;
 
 namespace TypeProyect.Screens.Pieces
 {
@@ -30,7 +30,6 @@ namespace TypeProyect.Screens.Pieces
         private SpriteText timeText;
         private SpriteText totalTimeText;
         private SpriteText hoverTimeText;
-        private Bindable<bool> barsHovered = new Bindable<bool>();
 
         public ProgressContainer()
         {
@@ -41,8 +40,8 @@ namespace TypeProyect.Screens.Pieces
                 timeText = new SpriteText
                 {
                     AlwaysPresent = true,
-                    Anchor = Anchor.TopLeft,
-                    Origin = Anchor.TopLeft,
+                    Anchor = Anchor.BottomLeft,
+                    Origin = Anchor.BottomLeft,
                     Text = "0:00",
                     Font = "Exo2.0-SemiBold",
                     TextSize = 45,
@@ -51,8 +50,8 @@ namespace TypeProyect.Screens.Pieces
                 totalTimeText = new SpriteText
                 {
                     AlwaysPresent = true,
-                    Anchor = Anchor.TopRight,
-                    Origin = Anchor.TopRight,
+                    Anchor = Anchor.BottomRight,
+                    Origin = Anchor.BottomRight,
                     Text = "x:xx",
                     Font = "Exo2.0-SemiBold",
                     TextSize = 45,
@@ -140,11 +139,8 @@ namespace TypeProyect.Screens.Pieces
                     zyx = false;
                 }
                 hoverTimeText.FadeTo(value || dragged ? 1 : 0, 200, Easing.OutCubic);
-                if (value || dragged)
-                    TriggerOnMouseMove(s);
             }
         }
-
         [BackgroundDependencyLoader]
         private void load(Storage storage, TypeProyect proyect)
         {
@@ -157,12 +153,7 @@ namespace TypeProyect.Screens.Pieces
             }
             using (StreamReader r = new StreamReader(storage.GetStream("list.json")))
                 metadataList = JsonConvert.DeserializeObject<List<string>>(r.ReadToEnd());
-            Schedule(() =>
-            {
-                playNext();
-                barsHovered.ValueChanged += trianglePopUp;
-                barsHovered.TriggerChange();
-            });
+            Schedule(playNext);
         }
 
         public void AddSong(AudioMetadata meta, string path)
@@ -236,9 +227,9 @@ namespace TypeProyect.Screens.Pieces
                 proyect.Metadata.Value = meta;
                 proyect.Audio.Track.AddItemToList(meta.Track);
                 meta.Track.Restart();
+                hoverTimeText.Text = formatTime(TimeSpan.FromMilliseconds((proyect.Metadata.Value?.Track?.Length ?? 0) * hoverTimeText.Position.X));
+                totalTimeText.Text = formatTime(TimeSpan.FromMilliseconds(proyect.Metadata.Value?.Track?.Length ?? 0));
             }
-            hoverTimeText.Text = formatTime(TimeSpan.FromMilliseconds((proyect.Metadata.Value?.Track?.Length ?? 0) * hoverTimeText.Position.X));
-            totalTimeText.Text = formatTime(TimeSpan.FromMilliseconds(proyect.Metadata.Value?.Track?.Length ?? 0));
         }
 
         private string formatTime(TimeSpan t) => $"{Math.Floor(t.Duration().TotalMinutes)}:{t.Duration().Seconds:D2}";
@@ -248,7 +239,6 @@ namespace TypeProyect.Screens.Pieces
         protected override void Update()
         {
             base.Update();
-            barsHovered.Value = barContainer.IsHovered;
 
             var track = proyect.Metadata.Value?.Track;
 
@@ -268,12 +258,18 @@ namespace TypeProyect.Screens.Pieces
 
         private bool xyz = false;
         private bool zyx = false;
-        private InputState s;
+
+        protected override bool OnHover(InputState state)
+        {
+            trianglePopUp(true);
+            return base.OnHover(state);
+        }
+
+        protected override void OnHoverLost(InputState state) => trianglePopUp(false);
 
         protected override bool OnMouseMove(InputState state)
         {
-            s = state;
-            if (barsHovered || dragged)
+            if (IsHovered || dragged)
             {
                 float f = MathHelper.Clamp(ToLocalSpace(state.Mouse.Position).X / barContainer.DrawSize.X, 0, 1);
                 triangle.MoveToX(f);
@@ -313,27 +309,32 @@ namespace TypeProyect.Screens.Pieces
 
         private bool dragged = false;
 
-        protected override bool OnDragStart(InputState state)
-        {
-            dragged = true;
-            var t = proyect.Metadata.Value?.Track;
-            if (barsHovered && (t?.IsLoaded ?? false))
-                proyect.Metadata.Value?.Track.Stop();
-            return true;
-        }
+        protected override bool OnDragStart(InputState state) => true;
 
         protected override bool OnDrag(InputState state)
         {
-            TriggerOnMouseMove(state);
+            if (!IsHovered)
+                TriggerOnMouseMove(state);
             return base.OnDrag(state);
         }
 
-        protected override bool OnDragEnd(InputState state)
+        protected override bool OnMouseDown(InputState state, MouseDownEventArgs args)
         {
-            dragged = false;
-            barsHovered.TriggerChange();
             var t = proyect.Metadata.Value?.Track;
-            if ((t?.IsLoaded ?? false))
+            if ((t?.IsLoaded ?? false) && IsHovered && state.Mouse.IsPressed(MouseButton.Left))
+            {
+                dragged = true;
+                t.Stop();
+                TriggerOnMouseMove(state);
+            }
+            return true;
+        }
+
+        protected override bool OnMouseUp(InputState state, MouseUpEventArgs args)
+        {
+            var t = proyect.Metadata.Value?.Track;
+
+            if ((t?.IsLoaded ?? false) && dragged)
             {
                 if (triangle.Position.X != 1)
                 {
@@ -342,19 +343,9 @@ namespace TypeProyect.Screens.Pieces
                 }
                 else
                     playNext();
+                dragged = false;
             }
-            return base.OnDragEnd(state);
-        }
-
-        protected override bool OnClick(InputState state)
-        {
-            var t = proyect.Metadata.Value?.Track;
-            if (barsHovered && (t?.IsLoaded ?? false))
-            {
-                float f = ToLocalSpace(state.Mouse.Position).X / barContainer.DrawSize.X;
-                t.Seek(MathHelper.Clamp(f * t.Length, 0, t.Length));
-            }
-            return base.OnClick(state);
+            return base.OnMouseUp(state, args);
         }
     }
 
