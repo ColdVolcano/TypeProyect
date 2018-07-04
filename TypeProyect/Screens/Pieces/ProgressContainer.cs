@@ -23,7 +23,7 @@ namespace TypeProyect.Screens.Pieces
         private TypeProyect proyect;
         private const float bar_height = 40;
         private EquilateralTriangle triangle;
-        private List<string> metadataList = new List<string>();
+        private List<AudioMetadata> metadataList = new List<AudioMetadata>();
         private int index = -1;
         private Container barContainer;
         private Container progress;
@@ -59,6 +59,7 @@ namespace TypeProyect.Screens.Pieces
                 },
                 hoverTimeText = new SpriteText
                 {
+                    Alpha = 0,
                     RelativePositionAxes = Axes.X,
                     Anchor = Anchor.TopLeft,
                     Origin = Anchor.BottomCentre,
@@ -152,7 +153,9 @@ namespace TypeProyect.Screens.Pieces
                 return;
             }
             using (StreamReader r = new StreamReader(storage.GetStream("list.json")))
-                metadataList = JsonConvert.DeserializeObject<List<string>>(r.ReadToEnd());
+                foreach (string s in JsonConvert.DeserializeObject<List<string>>(r.ReadToEnd()))
+                    using (StreamReader sr = new StreamReader(storage.GetStream(s)))
+                        metadataList.Add(JsonConvert.DeserializeObject<AudioMetadata>(sr.ReadToEnd()));
             Schedule(playNext);
         }
 
@@ -186,7 +189,7 @@ namespace TypeProyect.Screens.Pieces
                 }
             }
             meta.AudioFile = $"{number}{Path.GetExtension(path)}";
-            metadataList.Add($"{number}.json");
+            metadataList.Add(meta);
             using (StreamWriter stream = new StreamWriter(storage.GetStream($"{number}.json", FileAccess.ReadWrite, FileMode.Create)))
                 stream.Write(JsonConvert.SerializeObject(meta, Formatting.Indented));
             using (StreamWriter mainFile = new StreamWriter(storage.GetStream("list.json", FileAccess.Write, FileMode.Create)))
@@ -215,21 +218,18 @@ namespace TypeProyect.Screens.Pieces
 
         private void play(bool next)
         {
-            using (StreamReader r = new StreamReader(storage.GetStream(metadataList[next ? ++index : --index])))
+            AudioMetadata meta = metadataList[next ? ++index : --index];
+            meta.InitializeComponents(storage);
+            if (proyect.Metadata.Value?.Track != null)
             {
-                AudioMetadata meta = JsonConvert.DeserializeObject<AudioMetadata>(r.ReadToEnd());
-                meta.InitializeComponents(storage);
-                if (proyect.Metadata.Value?.Track != null)
-                {
-                    proyect.Metadata.Value.Track.Stop();
-                    proyect.Metadata.Value.Track.Dispose();
-                }
-                proyect.Metadata.Value = meta;
-                proyect.Audio.Track.AddItemToList(meta.Track);
-                meta.Track.Restart();
-                hoverTimeText.Text = formatTime(TimeSpan.FromMilliseconds((proyect.Metadata.Value?.Track?.Length ?? 0) * hoverTimeText.Position.X));
-                totalTimeText.Text = formatTime(TimeSpan.FromMilliseconds(proyect.Metadata.Value?.Track?.Length ?? 0));
+                proyect.Metadata.Value.Track.Stop();
+                proyect.Metadata.Value.Track.Dispose();
             }
+            proyect.Metadata.Value = meta;
+            proyect.Audio.Track.AddItemToList(meta.Track);
+            meta.Track.Restart();
+            hoverTimeText.Text = formatTime(TimeSpan.FromMilliseconds(meta.Track?.Length ?? 0) * hoverTimeText.Position.X);
+            totalTimeText.Text = formatTime(TimeSpan.FromMilliseconds(meta.Track?.Length ?? 0));
         }
 
         private string formatTime(TimeSpan t) => $"{Math.Floor(t.Duration().TotalMinutes)}:{t.Duration().Seconds:D2}";
