@@ -1,13 +1,13 @@
-﻿using osu.Framework;
+﻿using OpenTK.Input;
+using osu.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.IO.Stores;
+using osu.Framework.Platform;
 using System;
 using System.Threading.Tasks;
 using TypeProyect.Screens;
-using osu.Framework.Configuration;
-using osu.Framework.Platform;
-using OpenTK.Input;
 
 namespace TypeProyect
 {
@@ -93,9 +93,8 @@ namespace TypeProyect
             a.FileDrop += importSongs;
         }
 
-        private void importSongs(object sender, FileDropEventArgs args)
-        {
-            loader.ImportSongs(sender, args);
-        }
+        private void importSongs(object sender, FileDropEventArgs args) => loader.ImportSongs(sender, args);
+
+        public void PlayNext() => loader.PlayNext();
     }
 }

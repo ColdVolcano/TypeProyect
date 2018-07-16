@@ -1,30 +1,25 @@
-﻿using System.Collections.Generic;
-using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics;
-using osu.Framework.Graphics.Shapes;
-using osu.Framework.Allocation;
+﻿using OpenTK;
 using OpenTK.Graphics;
-using osu.Framework.Platform;
-using OpenTK;
-using Newtonsoft.Json;
-using System.IO;
+using OpenTK.Input;
+using osu.Framework.Allocation;
+using osu.Framework.Configuration;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Transforms;
-using System;
 using osu.Framework.Input;
-using Id3;
-using OpenTK.Input;
+using System;
+using System.Threading.Tasks;
 
 namespace TypeProyect.Screens.Pieces
 {
     public class ProgressContainer : Container
     {
-        private Storage storage;
         private TypeProyect proyect;
+        private Bindable<AudioMetadata> metadata = new Bindable<AudioMetadata>();
         private const float bar_height = 40;
         private EquilateralTriangle triangle;
-        private List<AudioMetadata> metadataList = new List<AudioMetadata>();
-        private int index = -1;
         private Container barContainer;
         private Container progress;
         private SpriteText timeText;
@@ -121,10 +116,27 @@ namespace TypeProyect.Screens.Pieces
             };
 
         }
+        [BackgroundDependencyLoader]
+        private void load(TypeProyect proj)
+        {
+            proyect = proj;
+            metadata.BindTo(proj.Metadata);
+            metadata.ValueChanged += selfText;
+        }
+
+        private void selfText(AudioMetadata obj)
+        {
+            Task.Run(() =>
+            {
+                while (!(obj.Track?.IsLoaded ?? false)) ;
+                hoverTimeText.Text = formatTime(TimeSpan.FromMilliseconds(obj.Track?.Length ?? 0) * hoverTimeText.Position.X);
+                totalTimeText.Text = formatTime(TimeSpan.FromMilliseconds(obj.Track?.Length ?? 0));
+            });
+        }
 
         private void trianglePopUp(bool value)
         {
-            if (proyect.Metadata.Value?.Track?.IsLoaded ?? false)
+            if (metadata.Value?.Track?.IsLoaded ?? false)
             {
                 triangle.MoveToY(value || dragged ? -1 : 13, 200, Easing.OutCubic);
                 timeText.ResizeTextHeightTo(value || dragged ? 45 - 14f : 45, 200, Easing.OutCubic);
@@ -142,95 +154,6 @@ namespace TypeProyect.Screens.Pieces
                 hoverTimeText.FadeTo(value || dragged ? 1 : 0, 200, Easing.OutCubic);
             }
         }
-        [BackgroundDependencyLoader]
-        private void load(Storage storage, TypeProyect proyect)
-        {
-            this.storage = storage;
-            this.proyect = proyect;
-            if (!storage.Exists("list.json"))
-            {
-                //proyect.ShowNoSongs();
-                return;
-            }
-            using (StreamReader r = new StreamReader(storage.GetStream("list.json")))
-                foreach (string s in JsonConvert.DeserializeObject<List<string>>(r.ReadToEnd()))
-                    using (StreamReader sr = new StreamReader(storage.GetStream(s)))
-                        metadataList.Add(JsonConvert.DeserializeObject<AudioMetadata>(sr.ReadToEnd()));
-            Schedule(playNext);
-        }
-
-        public void AddSong(AudioMetadata meta, string path)
-        {
-            string number = $"{ metadataList.Count + 1}";
-            string s = "";
-            using (var mp3 = new Mp3(path))
-            {
-                Id3Tag tag = mp3.GetTag(Id3TagFamily.Version2X);
-                if (tag.Pictures.Count > 0)
-                {
-                    s = tag.Pictures[0].GetExtension();
-                    if (s == "jpeg" || s == "jpg")
-                        s = ".jpg";
-                    else if (s == "png")
-                        s = ".png";
-                    using (var ds = storage.GetStream($"{number}{s}", FileAccess.Write, FileMode.Create))
-                        tag.Pictures[0].SaveImage(ds);
-                }
-
-            }
-            meta.CoverFiles.Add($"{number}{s}");
-            using (var d = new FileStream(path, FileMode.Open))
-            {
-                using (var e = storage.GetStream($"{number}{Path.GetExtension(path)}", FileAccess.Write, FileMode.Create))
-                {
-                    byte[] arr = new byte[d.Length];
-                    d.Read(arr, 0, arr.Length);
-                    e.Write(arr, 0, arr.Length);
-                }
-            }
-            meta.AudioFile = $"{number}{Path.GetExtension(path)}";
-            metadataList.Add(meta);
-            using (StreamWriter stream = new StreamWriter(storage.GetStream($"{number}.json", FileAccess.ReadWrite, FileMode.Create)))
-                stream.Write(JsonConvert.SerializeObject(meta, Formatting.Indented));
-            using (StreamWriter mainFile = new StreamWriter(storage.GetStream("list.json", FileAccess.Write, FileMode.Create)))
-                mainFile.Write(JsonConvert.SerializeObject(metadataList, Formatting.Indented));
-            if (!(proyect.Metadata.Value?.Track.IsRunning ?? false))
-                playNext();
-        }
-
-        private void playNext()
-        {
-            if (metadataList.Count == 0)
-                return;
-            if (index == metadataList.Count - 1)
-                index = -1;
-
-            play(true);
-        }
-
-        private void playBefore()
-        {
-            if (index == 0)
-                index = metadataList.Count + 1;
-
-            play(false);
-        }
-
-        private void play(bool next)
-        {
-            AudioMetadata meta = metadataList[next ? ++index : --index];
-            meta.InitializeComponents(storage);
-            if (proyect.Metadata.Value?.Track != null)
-            {
-                proyect.Metadata.Value.Track.Stop();
-                proyect.Metadata.Value.Track.Dispose();
-            }
-            proyect.Metadata.Value = meta;
-            proyect.Audio.Track.AddItemToList(meta.Track);
-            meta.Track.Restart();
-            hoverTimeText.Text = formatTime(TimeSpan.FromMilliseconds(meta.Track?.Length ?? 0) * hoverTimeText.Position.X);
-            totalTimeText.Text = formatTime(TimeSpan.FromMilliseconds(meta.Track?.Length ?? 0));
-        }
 
         private string formatTime(TimeSpan t) => $"{Math.Floor(t.Duration().TotalMinutes)}:{t.Duration().Seconds:D2}";
 
@@ -240,7 +163,7 @@ namespace TypeProyect.Screens.Pieces
         {
             base.Update();
 
-            var track = proyect.Metadata.Value?.Track;
+            var track = metadata.Value?.Track;
 
             if (track?.IsLoaded ?? false)
             {
@@ -252,7 +175,7 @@ namespace TypeProyect.Screens.Pieces
                 timeText.Text = formatTime(TimeSpan.FromMilliseconds(track.CurrentTime));
 
                 if (track.HasCompleted && !track.Looping)
-                    playNext();
+                    proyect.PlayNext();
             }
         }
 
@@ -275,8 +198,8 @@ namespace TypeProyect.Screens.Pieces
                 triangle.MoveToX(f);
                 hoverTimeText.MoveToX(f);
                 if (dragged)
-                    currentTime = (proyect.Metadata.Value?.Track?.Length ?? 0) * f;
-                hoverTimeText.Text = formatTime(TimeSpan.FromMilliseconds((proyect.Metadata.Value?.Track?.Length ?? 0) * f));
+                    currentTime = (metadata.Value?.Track?.Length ?? 0) * f;
+                hoverTimeText.Text = formatTime(TimeSpan.FromMilliseconds((metadata.Value?.Track?.Length ?? 0) * f));
                 if (hoverTimeText.BoundingBox.IntersectsWith(timeText.BoundingBox))
                 {
                     if (!xyz)
@@ -320,7 +243,7 @@ namespace TypeProyect.Screens.Pieces
 
         protected override bool OnMouseDown(InputState state, MouseDownEventArgs args)
         {
-            var t = proyect.Metadata.Value?.Track;
+            var t = metadata.Value?.Track;
             if ((t?.IsLoaded ?? false) && IsHovered && state.Mouse.IsPressed(MouseButton.Left))
             {
                 dragged = true;
@@ -332,7 +255,7 @@ namespace TypeProyect.Screens.Pieces
 
         protected override bool OnMouseUp(InputState state, MouseUpEventArgs args)
         {
-            var t = proyect.Metadata.Value?.Track;
+            var t = metadata.Value?.Track;
 
             if ((t?.IsLoaded ?? false) && dragged)
             {
@@ -342,7 +265,7 @@ namespace TypeProyect.Screens.Pieces
                     t.Start();
                 }
                 else
-                    playNext();
+                    proyect.PlayNext();
                 dragged = false;
             }
             return base.OnMouseUp(state, args);

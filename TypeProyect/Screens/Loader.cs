@@ -1,4 +1,5 @@
-﻿using OpenTK;
+﻿using Id3;
+using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
 using osu.Framework.Allocation;
@@ -8,10 +9,9 @@ using osu.Framework.Graphics.Shaders;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TypeProyect.Screens.Pieces;
-using Id3;
-using System.IO;
 
 namespace TypeProyect.Screens
 {
@@ -23,6 +23,7 @@ namespace TypeProyect.Screens
         private CoverContainer coverContainer;
         private Triangles triangles;
         private ProgressContainer progress;
+        private PlaylistContainer playlist;
 
         private readonly List<Shader> loadTargets = new List<Shader>();
 
@@ -80,6 +81,7 @@ namespace TypeProyect.Screens
                 Position = new Vector2(192, 614),
                 Size = new Vector2(1536, 460),
             }, Add);
+            game.LoadComponentSingleFile(playlist = new PlaylistContainer(), Add);
         }
 
         public void ImportSongs(object sender, FileDropEventArgs e)
@@ -105,9 +107,11 @@ namespace TypeProyect.Screens
                         meta.Artist = meta.ArtistUnicode = "Unkown Artist";
                     meta.Title = meta.TitleUnicode = tag.Title.Value ?? "Unkown Title";
                 }
-                progress.AddSong(meta, p);
+                playlist.AddSong(meta, p);
             }
         }
+
+        public void PlayNext() => playlist.PlayNext();
 
         private bool checkExtension(string ext) => ext != ".mp3";
     }
